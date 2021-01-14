@@ -1,6 +1,6 @@
 # CC1101
 
-This project provides an interface to the [CC1101 Linux Driver](https://github.com/28757B2/cc1101_driver) to allow receiving and transmitting packets from Python.
+This project provides an interface to the [CC1101 Linux Driver](https://github.com/28757B2/cc1101-driver) to allow receiving and transmitting packets from Python.
 
 ## Dependencies
 
