@@ -97,8 +97,6 @@ while True:
         for packet in decode_rx_bytes(rx_bytes):
             # Decode the OOK decoded bitstrings based on the packet format 
             id, battery_ok, const0, channel, temperature, const1, humidity = bitstring.Bits(bin=packet).unpack("uint:8, bool:1, uint:1, uint:2, int:12, uint:4, uint:8")
-
-            print(id, battery_ok, const0, channel, temperature, const1, humidity)
             
             # Basic data checks
             if channel in [0,1,2] and const0 == 0 and const1 == 0xF and humidity <= 100:
