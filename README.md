@@ -10,7 +10,7 @@ This project provides an interface to the [CC1101 Linux Driver](https://github.c
 
     python3 -m cc1101 {tx,rx,config,reset}
 
-## `config`
+## config
 Retreive the current configuration from the driver.
 
 `rx` and `tx` print the human-readable configuration options.
@@ -19,10 +19,10 @@ Retreive the current configuration from the driver.
 
 `dev_raw` prints the current register values of the hardware.
 
-## `reset`
+## reset
 Clear the RX and TX configs and reset the radio hardware.
 
-## `tx`/`rx`
+## tx/rx
 
 Transmits or receives packets.
 
