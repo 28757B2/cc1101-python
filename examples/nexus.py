@@ -1,9 +1,7 @@
 """
 Copyright (c) 2021
 
-bresser_7000020.py
-
-Example showing decoding of data packets from a Bresser 7000020 Weather Station using the CC1101
+Example showing decoding of data packets from a Nexus protocol weather station using the CC1101
 
 #### Packet Information (from https://github.com/merbanan/rtl_433/blob/master/src/devices/nexus.c)###
 
@@ -51,7 +49,7 @@ Pulse width is ~500us = 500 * 10^-6
 BAUD_RATE = 4
 
 def decode_rx_bytes(rx_bytes: bytes) -> List[str]:
-    """Decode the received bytes to a sequence of Bresser 7000020 packets (36-bit strings)"""
+    """Decode the received bytes to a sequence of Nexus packets (36-bit strings)"""
 
     # Convert the received bytes to a string of bits
     rx_bits = bitstring.BitArray(bytes=rx_bytes).bin
@@ -67,7 +65,7 @@ def decode_rx_bytes(rx_bytes: bytes) -> List[str]:
         if bit == "1":
             # 10 or more 0's indicates the start of a packet
             if count > 10:
-                # Bresser 7000020 data packets are 36-bits
+                # Nexus data packets are 36-bits
                 if len(bits) == 36:
                     packets.append(bits)
                 bits = ""

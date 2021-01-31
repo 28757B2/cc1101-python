@@ -1,1 +1,4 @@
 *.pyc
+build/
+cc1101_python.egg-info/
+dist/

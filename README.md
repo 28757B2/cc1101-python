@@ -1,10 +1,10 @@
-# CC1101
+# cc1101-python
 
 This project provides an interface to the [CC1101 Linux Driver](https://github.com/28757B2/cc1101-driver) to allow receiving and transmitting packets from Python.
 
-## Dependencies
+## Setup
 
-    pip3 install ioctl_opt
+    pip3 install cc1101-python
 
 # Command Line
 
