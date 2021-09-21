@@ -41,7 +41,7 @@ def tx(args: argparse.Namespace) -> None:
         print(f"Error: {e}")
         return
 
-    cc1101 = CC1101(args.device, None)
+    cc1101 = CC1101(args.device, None, args.block)
 
     if args.config_only:
         cc1101.set_tx_config(tx_config)
@@ -76,7 +76,7 @@ def rx(args: argparse.Namespace) -> None:
         print(f"Error: {e}")
         return
 
-    cc1101 = CC1101(args.device, rx_config)
+    cc1101 = CC1101(args.device, rx_config, args.block)
 
     if args.print_registers:
         config.print_raw_config(cc1101.get_device_config())
@@ -120,7 +120,7 @@ def reset(args: argparse.Namespace) -> None:
     cc1101.reset()
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(prog="cc1101")
     subparsers = parser.add_subparsers()
 
@@ -158,6 +158,11 @@ def main():
         "--print-registers",
         action="store_true",
         help="print raw register values after configuration",
+    )
+    tx_parser.add_argument(
+        "--block",
+        action="store_true",
+        help="obtain an exclusive lock on the device"
     )
     tx_parser.set_defaults(func=tx)
 
@@ -202,6 +207,12 @@ def main():
         action="store_true",
         help="print raw register values after configuration",
     )
+    rx_parser.add_argument(
+        "--block",
+        action="store_true",
+        help="obtain an exclusive lock on the device"
+    )
+
     rx_parser.set_defaults(func=rx)
 
     conf_parser = subparsers.add_parser("config", help="Get Device Configs")

@@ -170,10 +170,10 @@ class CommonConfig:
     typedef struct {
         unsigned frequency;
         unsigned char modulation;
-        unsigned char baud_rate_exponent;
         unsigned char baud_rate_mantissa;
-        unsigned char deviation_exponent;
+        unsigned char baud_rate_exponent;
         unsigned char deviation_mantissa;
+        unsigned char deviation_exponent;
         unsigned long sync_word;
     } cc1101_common_config_t;
     """
@@ -286,10 +286,10 @@ class CommonConfig:
             )
         )
 
-        return exponent, mantissa
+        return mantissa, exponent
 
     @staticmethod
-    def config_to_baud_rate(exponent: int, mantissa: int) -> float:
+    def config_to_baud_rate(mantissa: int, exponent: int) -> float:
         """Convert a baud rate configuration value to kBaud"""
         xtal_freq = XTAL_FREQ * 1000000
 
@@ -328,7 +328,7 @@ class CommonConfig:
     def validate_deviation(deviation: float) -> None:
         """Validate a deviation frequency
 
-        Min/Max values allowed by 3-bit exponent and mantissa
+        Min/Max values allowed by 3-bit mantissa and exponent
         """
         RXConfig.deviation_to_config(deviation)
 
@@ -337,13 +337,13 @@ class CommonConfig:
         """Convert a deviation in kHz to a configuration value"""
         for exponent in range(0, 8):
             for mantissa in range(0, 8):
-                if RXConfig.config_to_deviation(exponent, mantissa) == deviation:
-                    return exponent, mantissa
+                if RXConfig.config_to_deviation(mantissa, exponent) == deviation:
+                    return mantissa, exponent
 
         raise ValueError("invalid deviation")
 
     @staticmethod
-    def config_to_deviation(exponent: int, mantissa: int) -> float:
+    def config_to_deviation(mantissa: int, exponent: int) -> float:
         """Convert a deviation configuration value to kHz
 
         Uses the formula from section 16.1 of the datasheet
@@ -422,10 +422,10 @@ class CommonConfig:
         (
             frequency,
             modulation,
-            baud_rate_exponent,
             baud_rate_mantissa,
-            deviation_exponent,
+            baud_rate_exponent,
             deviation_mantissa,
+            deviation_exponent,
             sync_word,
         ) = struct.unpack(cls.COMMON_STRUCT_FORMAT, config_bytes[: CommonConfig.size()])
 
@@ -434,10 +434,10 @@ class CommonConfig:
             "frequency": cls.config_to_frequency(frequency),
             "modulation": modulation,
             "baud_rate": cls.config_to_baud_rate(
-                baud_rate_exponent, baud_rate_mantissa
+                baud_rate_mantissa, baud_rate_exponent
             ),
             "deviation": cls.config_to_deviation(
-                deviation_exponent, deviation_mantissa
+                deviation_mantissa, deviation_exponent
             ),
             "sync_word": sync_word,
         }
@@ -452,11 +452,11 @@ class CommonConfig:
         """Convert the configuration to a struct that can be sent to the CC1101 driver"""
 
         # Get common items that convert to multiple values
-        baud_rate_exponent, baud_rate_mantissa = self.baud_rate_to_config(
+        baud_rate_mantissa, baud_rate_exponent = self.baud_rate_to_config(
             self._baud_rate
         )
 
-        deviation_exponent, deviation_mantissa = self.deviation_to_config(
+        deviation_mantissa, deviation_exponent = self.deviation_to_config(
             self._deviation
         )
 
@@ -464,10 +464,10 @@ class CommonConfig:
         args = [
             self.frequency_to_config(self._frequency),
             self._modulation,
-            baud_rate_exponent,
             baud_rate_mantissa,
-            deviation_exponent,
+            baud_rate_exponent,
             deviation_mantissa,
+            deviation_exponent,
             self._sync_word,
         ]
 
@@ -490,8 +490,8 @@ class RXConfig(CommonConfig):
 
     typedef struct {
         cc1101_common_config_t common;
-        unsigned char bandwidth_exponent;
         unsigned char bandwidth_mantissa;
+        unsigned char bandwidth_exponent;
         unsigned char carrier_sense;
         unsigned packet_length;
     } cc1101_rx_config_t;
@@ -521,9 +521,9 @@ class RXConfig(CommonConfig):
     def supported_bandwidths() -> List[int]:
         """Get a list of bandwidth values supported by the device"""
         return [
-            int(RXConfig.config_to_bandwidth(e, m))
-            for e in reversed(range(0, 4))
+            int(RXConfig.config_to_bandwidth(m, e))
             for m in reversed(range(0, 4))
+            for e in reversed(range(0, 4))
         ]
 
     @staticmethod
@@ -537,15 +537,15 @@ class RXConfig(CommonConfig):
     @staticmethod
     def bandwidth_to_config(bandwidth: int) -> Tuple[int, int]:
         """Convert a bandwidth in kHz to a configuration value"""
-        for exponent in range(0, 4):
-            for mantissa in range(0, 4):
-                if bandwidth == RXConfig.config_to_bandwidth(exponent, mantissa):
-                    return exponent, mantissa
+        for mantissa in range(0, 4):
+            for exponent in range(0, 4):
+                if bandwidth == RXConfig.config_to_bandwidth(mantissa, exponent):
+                    return mantissa, exponent
 
         raise ValueError("invalid bandwidth")
 
     @staticmethod
-    def config_to_bandwidth(exponent: int, mantissa: int) -> int:
+    def config_to_bandwidth(mantissa: int, exponent: int) -> int:
         """Convert a bandwidth configuration value to kHz
 
         Uses the formula from section 13 of the datasheet
@@ -568,12 +568,12 @@ class RXConfig(CommonConfig):
         self._bandwidth = bandwidth
 
     def get_unique(self) -> Tuple[int, int, int, int]:
-        bandwidth_exponent, bandwidth_mantissa = self.bandwidth_to_config(
+        bandwidth_mantissa, bandwidth_exponent = self.bandwidth_to_config(
             self.bandwidth
         )
         return (
-            bandwidth_exponent,
             bandwidth_mantissa,
+            bandwidth_exponent,
             self.carrier_sense,
             self.packet_length,
         )
@@ -581,13 +581,13 @@ class RXConfig(CommonConfig):
     @classmethod
     def set_unique(cls, config_bytes: bytes) -> Dict[str, Any]:
         (
-            bandwidth_exponent,
             bandwidth_mantissa,
+            bandwidth_exponent,
             carrier_sense,
             packet_length,
         ) = struct.unpack(cls.STRUCT_FORMAT, config_bytes)
 
-        bandwidth = cls.config_to_bandwidth(bandwidth_exponent, bandwidth_mantissa)
+        bandwidth = cls.config_to_bandwidth(bandwidth_mantissa, bandwidth_exponent)
 
         return {
             "bandwidth": bandwidth,
@@ -602,6 +602,11 @@ class RXConfig(CommonConfig):
         ret += f"Carrier Sense: {self.carrier_sense} dB\n"
         return ret
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, RXConfig):
+            return self.to_bytes() == other.to_bytes()
+        
+        return False
 
 class TXConfig(CommonConfig):
     """Class for configuration properties required for TX
