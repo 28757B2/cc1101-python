@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="cc1101-python",
-    version="1.0.0",
+    version="1.2.0",
     author="28757B2",
     description="Python interface to the CC1101 Linux device driver",
     long_description=long_description,
