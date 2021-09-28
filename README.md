@@ -74,6 +74,9 @@ Valid values are:
 
     17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48
 
+#### `--block`
+Hold the device handle open while receiving. This prevents another process from using or reconfiguring the device, but prevents multiplexing of RX/TX on a single device between two processes. 
+
 ### `tx` Options
 
 #### `frequency`
@@ -106,7 +109,7 @@ from cc1101.config import RXConfig, Modulation
 from cc1101 import CC1101
 
 rx_config = RXConfig(frequency=434, modulation=Modulation.OOK, baud_rate=1, sync_word=0x0000, packet_length=64)
-radio = CC1101("/dev/cc1101.0.0", rx_config)
+radio = CC1101("/dev/cc1101.0.0", rx_config, block=True)
 
 while True:
     packets = radio.receive()

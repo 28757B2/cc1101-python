@@ -41,7 +41,7 @@ def tx(args: argparse.Namespace) -> None:
         print(f"Error: {e}")
         return
 
-    cc1101 = CC1101(args.device, None, args.block)
+    cc1101 = CC1101(args.device, None, False)
 
     if args.config_only:
         cc1101.set_tx_config(tx_config)
@@ -158,11 +158,6 @@ def main() -> None:
         "--print-registers",
         action="store_true",
         help="print raw register values after configuration",
-    )
-    tx_parser.add_argument(
-        "--block",
-        action="store_true",
-        help="obtain an exclusive lock on the device"
     )
     tx_parser.set_defaults(func=tx)
 
