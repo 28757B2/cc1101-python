@@ -109,7 +109,7 @@ from cc1101.config import RXConfig, Modulation
 from cc1101 import CC1101
 
 rx_config = RXConfig(frequency=434, modulation=Modulation.OOK, baud_rate=1, sync_word=0x0000, packet_length=64)
-radio = CC1101("/dev/cc1101.0.0", rx_config, block=True)
+radio = CC1101("/dev/cc1101.0.0", rx_config, blocking=True)
 
 while True:
     packets = radio.receive()
