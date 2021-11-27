@@ -50,7 +50,7 @@ The data rate in kBaud to receive/transmit packets. Valid values are within the 
 #### `sync_word`
 The Sync Word to use, specified as a two or four byte hexadecimal value (e.g `0f0f`). If four bytes are used, the upper and lower two bytes must be the same (e.g `0f0f0f0f`) 
 
-In RX, the device searches for the specified sync word to being reception. 
+In RX, the device searches for the specified sync word to begin reception. Set `0x00` to disable the sync word.
 
 In TX, the sync word is preprended to each packet.
 
@@ -68,14 +68,46 @@ Sets the receive bandwidth in kHz. Valid values are
     58,67,81,101,116,135,162,203,232,270,325,406,464,541,650,812
 
 #### `--carrier-sense`
-Sets the carrier sense threshold in dB. When a sync word is provided, RX only begins when the carrier sense is above the threshold and the sync word has been received.
+Sets the carrier sense threshold in dB required to begin RX. Carrier sense can be set to a relative or an absolute value. When a sync word is provided, RX only begins when the carrier sense is above the threshold and the sync word has been received.
+
+Not specifying a value disables carrier sense.
+
+Relative values are `+6`, `+10` and `+14`. These cause the radio to begin RX when the Received Signal Strength Indicator (RSSI) suddenly increases by this value. This is the easiest mode to use for basic RX.
+
+Absolute values are `-7` to `7` dB. These values cause the radio to begin RX when the RSSI exceeds the absolute value specified by `--magn-target` +/- the carrier-sense value. Using absolute carrier sense will likely require adjusting the `--magn-target`, `--max-lna-gain` and `--max-dvga-gain` experimentally until the required RSSI range is reached. `--out-format rssi` can be used to help find this. See Section 17.4 of the [CC1101 Datasheet](https://www.ti.com/lit/ds/symlink/cc1101.pdf) for examples.
+
+#### `--magn-target`
+Sets the target channel filter amplitude in dB. Valid values are:
+
+    24, 27, 30, 33, 36, 38, 40, 42
+
+#### `--max-lna-gain`
+Decreases the maximum LNA gain by approximately the specified amount in dB.
 
 Valid values are:
 
-    17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48
+    0, 3, 6, 7, 9, 12, 15, 17
+
+#### `--max-dvga-gain`
+Decreases the maximum DVGA gain by approximately the specified amount in dB.
+
+Valid values are:
+
+    0, 6, 12, 18
 
 #### `--block`
 Hold the device handle open while receiving. This prevents another process from using or reconfiguring the device, but prevents multiplexing of RX/TX on a single device between two processes. 
+
+#### `--out-format`
+Set the output format. 
+
+`info` prints the packet received count, Received Signal Strength Indictator (RSSI) and the hexadecimal representation of each packet as it is received.
+
+`hex` prints the packet as hexadecimal.
+
+`bin` outputs the raw packet bytes to stdout. This is useful for piping into other tools.
+
+`rssi` continually outputs the current value of RSSI.
 
 ### `tx` Options
 

@@ -21,6 +21,8 @@ class IOCTL(IntEnum):
     GET_RX_CONF = 6
     GET_RX_RAW_CONF = 7
     GET_DEV_RAW_CONF = 8
+    GET_RSSI = 9
+    GET_MAX_PACKET_SIZE = 10
 
 
 def call(fh: int, cmd: IOCTL) -> None:

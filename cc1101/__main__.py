@@ -3,11 +3,12 @@ Copyright (c) 2021
 """
 
 import argparse
-from binascii import hexlify, unhexlify
+import sys
 import time
 
-from . import config, CC1101
+from binascii import hexlify, unhexlify
 
+from . import config, CC1101
 
 def tx(args: argparse.Namespace) -> None:
     """Handle the tx subcommand"""
@@ -61,6 +62,22 @@ def rx(args: argparse.Namespace) -> None:
     sync_word = int(args.sync_word, 16)
     packet_size = int(args.packet_size)
 
+    if args.carrier_sense is None:
+        carrier_sense_mode = config.CarrierSenseMode.DISABLED
+        carrier_sense = 0        
+    elif args.carrier_sense == "+6":
+        carrier_sense_mode = config.CarrierSenseMode.RELATIVE
+        carrier_sense = 6
+    elif args.carrier_sense == "+10":
+        carrier_sense_mode = config.CarrierSenseMode.RELATIVE
+        carrier_sense = 10
+    elif args.carrier_sense == "+14":
+        carrier_sense_mode = config.CarrierSenseMode.RELATIVE
+        carrier_sense = 14
+    else:
+        carrier_sense_mode = config.CarrierSenseMode.ABSOLUTE
+        carrier_sense = int(args.carrier_sense)
+
     try:
         rx_config = config.RXConfig(
             frequency,
@@ -68,9 +85,13 @@ def rx(args: argparse.Namespace) -> None:
             baud_rate,
             sync_word,
             packet_size,
-            args.bandwidth,
-            args.carrier_sense,
-            args.deviation,
+            bandwidth = args.bandwidth,
+            magn_target = args.magn_target,
+            max_lna_gain = args.max_lna_gain,
+            max_dvga_gain = args.max_dvga_gain,
+            carrier_sense_mode = carrier_sense_mode,
+            carrier_sense = carrier_sense,
+            deviation = args.deviation,
         )
     except ValueError as e:
         print(f"Error: {e}")
@@ -82,13 +103,38 @@ def rx(args: argparse.Namespace) -> None:
         config.print_raw_config(cc1101.get_device_config())
 
     if not args.config_only:
-        print("Receiving Packets")
         count = 1
-        while True:
-            for packet in cc1101.receive():
-                print(f"[{count}] - {hexlify(packet).decode('ascii')}")
-                count += 1
+        min_rssi = None
+        max_rssi = None
 
+        while True:
+            if args.out_format == "rssi":
+                rssi = cc1101.get_rssi()
+
+                if min_rssi is None or rssi < min_rssi:
+                    min_rssi = rssi
+                
+                if max_rssi is None or rssi > max_rssi:
+                    max_rssi = rssi
+
+                output = f"\rCurrent: {rssi} dB / Min: {min_rssi} dB / Max: {max_rssi} dB"
+                sys.stdout.write("\r" + " " * count)
+                sys.stdout.write("\r" + output)
+                count = len(output)
+            else:
+                for packet in cc1101.receive():
+                    if args.out_format in ["hex", "info"]:
+                        packet_hex = hexlify(packet).decode('ascii')
+
+                        if args.out_format == "info":
+                            print(f"[{count} - {cc1101.get_rssi()} dB] {packet_hex}")
+                        else:
+                            print(packet_hex)
+
+                    else:
+                        sys.stdout.buffer.write(packet)
+
+                    count+=1
             time.sleep(0.1)
 
 
@@ -112,6 +158,7 @@ def conf(args: argparse.Namespace) -> None:
     elif args.conf_type == "dev_raw":
         config.print_raw_config(cc1101.get_device_config())
 
+    print(f"Max Packet Size: {cc1101.get_max_packet_size()}")
 
 def reset(args: argparse.Namespace) -> None:
     """Handle the reset subcommand"""
@@ -186,11 +233,30 @@ def main() -> None:
         help="recieve bandwidth (kHz)",
     )
     rx_parser.add_argument(
-        "--carrier-sense",
+        "--magn-target",
         type=int,
-        choices=range(17, 49),
-        default=33,
-        help="carrier-sense threshold (dB)",
+        choices = [24, 27, 30, 33, 36, 38, 40, 42],
+        default = 33,
+        help="target channel filter amplitude (dB)",
+    )
+    rx_parser.add_argument(
+        "--max-lna-gain",
+        type=int,
+        choices = [0, 3, 6, 7, 9, 12, 15, 17],
+        default = 0,
+        help="maximum LNA Gain (-dB)",
+    )
+    rx_parser.add_argument(
+        "--max-dvga-gain",
+        type=int,
+        choices = [0, 6, 12, 18],
+        default = 0,
+        help="maximum LNA Gain (-dB)",
+    )
+    rx_parser.add_argument(
+        "--carrier-sense",
+        choices=["+6", "+10", "+14"] + [str(i) for i in range(-7, 8)],
+        help="carrier sense threshold (dB). +6, +10 and +14 are relative increases to RSSI. -7 to 7 are absolute values. Disables carrier sense if not set",
     )
     rx_parser.add_argument(
         "--config-only",
@@ -206,6 +272,12 @@ def main() -> None:
         "--block",
         action="store_true",
         help="obtain an exclusive lock on the device"
+    )
+    rx_parser.add_argument(
+        "--out-format",
+        choices=["hex", "bin", "info", "rssi"],
+        default="hex",
+        help="output format"
     )
 
     rx_parser.set_defaults(func=rx)

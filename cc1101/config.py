@@ -13,7 +13,10 @@ XTAL_FREQ = 26
 DEFAULT_DEVIATION = 47.607422
 DEFAULT_BANDWIDTH = 203
 DEFAULT_SYNC_WORD = 0x0000
-DEFAULT_CARRIER_SENSE = 33
+DEFAULT_MAX_LNA_GAIN = 0
+DEFAULT_MAX_DVGA_GAIN = 0
+DEFAULT_MAGN_TARGET = 33
+DEFAULT_CARRIER_SENSE = 10
 
 # Valid TX powers from Design Note DN013
 # fmt: off
@@ -163,6 +166,11 @@ class Modulation(IntEnum):
         except:
             raise ValueError()
 
+
+class CarrierSenseMode(IntEnum):
+    DISABLED = 0
+    RELATIVE = 1
+    ABSOLUTE = 2
 
 class CommonConfig:
     """Class for common configuration properties shared by TX and RX
@@ -492,12 +500,16 @@ class RXConfig(CommonConfig):
         cc1101_common_config_t common;
         unsigned char bandwidth_mantissa;
         unsigned char bandwidth_exponent;
-        unsigned char carrier_sense;
+        unsigned char max_lna_gain;
+        unsigned char max_dvga_gain;
+        unsigned char magn_target;
+        unsigned char absolute_carrier_sense;
+        signed char carrier_sense;
         unsigned packet_length;
     } cc1101_rx_config_t;
     """
 
-    STRUCT_FORMAT = "BBBI"
+    STRUCT_FORMAT = "BBBBBBbI"
 
     packet_length: int
 
@@ -509,11 +521,19 @@ class RXConfig(CommonConfig):
         sync_word: int,
         packet_length: int,
         bandwidth: int = DEFAULT_BANDWIDTH,
+        max_lna_gain: int = DEFAULT_MAX_LNA_GAIN,
+        max_dvga_gain: int = DEFAULT_MAX_DVGA_GAIN,
+        magn_target: int = DEFAULT_MAGN_TARGET,
+        carrier_sense_mode: CarrierSenseMode = CarrierSenseMode.RELATIVE,
         carrier_sense: int = DEFAULT_CARRIER_SENSE,
         deviation: float = DEFAULT_DEVIATION,
     ):
         super().__init__(frequency, modulation, baud_rate, deviation, sync_word)
         self.bandwidth = bandwidth
+        self.max_lna_gain = max_lna_gain
+        self.max_dvga_gain = max_dvga_gain
+        self.magn_target = magn_target
+        self.carrier_sense_mode = carrier_sense_mode
         self.carrier_sense = carrier_sense
         self.packet_length = packet_length
 
@@ -567,13 +587,17 @@ class RXConfig(CommonConfig):
         self.validate_bandwidth(bandwidth)
         self._bandwidth = bandwidth
 
-    def get_unique(self) -> Tuple[int, int, int, int]:
+    def get_unique(self) -> Tuple[int, int, int, int, int, CarrierSenseMode, int, int]:
         bandwidth_mantissa, bandwidth_exponent = self.bandwidth_to_config(
             self.bandwidth
         )
         return (
             bandwidth_mantissa,
             bandwidth_exponent,
+            self.max_lna_gain,
+            self.max_dvga_gain,
+            self.magn_target,
+            self.carrier_sense_mode,
             self.carrier_sense,
             self.packet_length,
         )
@@ -583,6 +607,10 @@ class RXConfig(CommonConfig):
         (
             bandwidth_mantissa,
             bandwidth_exponent,
+            max_lna_gain,
+            max_dvga_gain,
+            magn_target,
+            carrier_sense_mode,
             carrier_sense,
             packet_length,
         ) = struct.unpack(cls.STRUCT_FORMAT, config_bytes)
@@ -591,6 +619,10 @@ class RXConfig(CommonConfig):
 
         return {
             "bandwidth": bandwidth,
+            "max_lna_gain": max_lna_gain,
+            "max_dvga_gain": max_dvga_gain,
+            "magn_target": magn_target,
+            "carrier_sense_mode": carrier_sense_mode,
             "carrier_sense": carrier_sense,
             "packet_length": packet_length,
         }
@@ -599,7 +631,17 @@ class RXConfig(CommonConfig):
         ret = super().__repr__()
         ret += f"Bandwidth: {self.bandwidth} kHz\n"
         ret += f"Packet Length: {self.packet_length}\n"
-        ret += f"Carrier Sense: {self.carrier_sense} dB\n"
+        ret += f"Max LNA Gain: -{self.max_lna_gain} dB\n"
+        ret += f"Max DVGA Gain: -{self.max_dvga_gain} dB\n"
+        ret += f"Target Channel Filter Amplitude: {self.magn_target} dB\n"
+
+        if self.carrier_sense_mode == CarrierSenseMode.ABSOLUTE:
+            ret += f"Carrier Sense: {self.carrier_sense} dB\n"
+        elif self.carrier_sense_mode == CarrierSenseMode.RELATIVE:
+            ret += f"Carrier Sense: +{self.carrier_sense} dB\n"
+        else:
+            ret += "Carrier Sense: Disabled"
+
         return ret
 
     def __eq__(self, other: object) -> bool:

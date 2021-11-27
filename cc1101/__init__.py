@@ -10,6 +10,9 @@ from types import TracebackType
 from cc1101.config import RXConfig, TXConfig, CONFIG_SIZE
 from cc1101 import ioctl
 
+# CC1101 datasheet Table 31
+RSSI_OFFSET = 74
+
 class CC1101Handle:
     """Class to hold a file handle to a CC1101 device"""
 
@@ -35,7 +38,7 @@ class CC1101Handle:
 class CC1101:
     """Class to control a CC1101 radio using the Linux driver"""
 
-    VERSION = 2
+    VERSION = 3
 
     dev: str
     rx_config: Optional[RXConfig] = None
@@ -131,6 +134,28 @@ class CC1101:
 
 
         raise IOError("RX config not set")
+
+    def get_rssi(self) -> float:
+        """Read the current RSSI value from the device"""
+        rssi_byte = bytearray(1)
+        self._ioctl(ioctl.IOCTL.GET_RSSI, rssi_byte)
+        (rssi_dec,) = struct.unpack("B", rssi_byte)
+
+        # Formula from CC1101 datasheet section 17.3
+        if rssi_dec >= 128:
+            rssi_dbm = (int(rssi_dec) - 256) / 2 - RSSI_OFFSET
+        else:
+            rssi_dbm = int(rssi_dec) / 2 - RSSI_OFFSET
+
+        return rssi_dbm
+
+    def get_max_packet_size(self) -> int:
+        """Read the configured maximum packet size from the driver"""
+        max_packet_size = bytearray(4)
+        self._ioctl(ioctl.IOCTL.GET_MAX_PACKET_SIZE, max_packet_size)
+        (max_packet_size,) = struct.unpack("I", max_packet_size)
+
+        return int(max_packet_size)
 
     def _ioctl(self, command: ioctl.IOCTL, out: bytes) -> None:
         """Helper to read a device config"""
