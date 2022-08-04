@@ -2,8 +2,8 @@
 Copyright (c) 2021
 """
 
+import ctypes
 import math
-import struct
 
 from enum import IntEnum
 from typing import Dict, List, Tuple, TypeVar, Type, Optional, Any
@@ -146,6 +146,41 @@ class Registers(IntEnum):
 
 CONFIG_SIZE = 0x2F
 
+class cc1101_common_config(ctypes.Structure):
+    """C struct definition for cc1101_common_config from cc1101.h"""
+
+    _fields_ = [
+        ("frequency", ctypes.c_uint),
+        ("modulation", ctypes.c_ubyte),
+        ("baud_rate_mantissa", ctypes.c_ubyte),
+        ("baud_rate_exponent", ctypes.c_ubyte),
+        ("deviation_mantissa", ctypes.c_ubyte), 
+        ("deviation_exponent", ctypes.c_ubyte), 
+        ("sync_word", ctypes.c_ulong),               
+    ]
+
+class cc1101_rx_config(ctypes.Structure):
+    """C struct definition for cc1101_rx_config from cc1101.h"""
+
+    _fields_ = [
+        ("common", cc1101_common_config),
+        ("bandwidth_mantissa", ctypes.c_ubyte),
+        ("bandwidth_exponent", ctypes.c_ubyte),
+        ("max_lna_gain", ctypes.c_ubyte),
+        ("max_dvga_gain", ctypes.c_ubyte), 
+        ("magn_target", ctypes.c_ubyte), 
+        ("carrier_sense_mode", ctypes.c_ubyte), 
+        ("carrier_sense", ctypes.c_char), 
+        ("packet_length", ctypes.c_uint), 
+    ]
+
+class cc1101_tx_config(ctypes.Structure):
+    """C struct definition for cc1101_tx_config from cc1101.h"""
+
+    _fields_ = [
+        ("common", cc1101_common_config),
+        ("tx_power", ctypes.c_ubyte), 
+    ]
 
 class Modulation(IntEnum):
     """CC1101 modulation modes"""
@@ -186,8 +221,6 @@ class CommonConfig:
     } cc1101_common_config_t;
     """
 
-    COMMON_STRUCT_FORMAT: str = "IBBBBBL"
-    STRUCT_FORMAT: str = ""
     _frequency: float
     _modulation: Modulation
     _baud_rate: float
@@ -401,65 +434,33 @@ class CommonConfig:
     @classmethod
     def size(cls: Type[T]) -> int:
         """Get the size in bytes of the configuration struct"""
-        return struct.calcsize(cls.COMMON_STRUCT_FORMAT + cls.STRUCT_FORMAT)
-
-    def get_unique(self) -> Tuple:
-        """Serialise the unique elements of a configuration
-
-        Child classes override this to return their unique configuration values
-        """
-        return ()
+        return ctypes.sizeof(cc1101_common_config)
 
     @classmethod
-    def set_unique(cls, config_bytes: bytes) -> Dict[str, Any]:
-        """Deserialise the unqiue elements of a configuration
+    def from_struct(cls: Type[T], config: cc1101_common_config) -> T:
+        """Construct a CommonConfig from a cc1101_common_config struct"""
 
-        Child classes override this to unpack their unique configuration values
-        """
-        return {}
+        frequency = cls.config_to_frequency(config.frequency)
 
-    @classmethod
-    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
-        """Convert a struct from the CC1101 driver to a configuration"""
+        baud_rate = cls.config_to_baud_rate(
+            config.baud_rate_mantissa, config.baud_rate_exponent
+        )
 
-        # Check for all zeroes in the config (not configured)
-        if sum(config_bytes) == 0:
-            return None
+        deviation = cls.config_to_deviation(
+            config.deviation_mantissa, config.deviation_exponent
+        )
 
-        # Unpack the common elements of the config
-        (
+        return cls(
             frequency,
-            modulation,
-            baud_rate_mantissa,
-            baud_rate_exponent,
-            deviation_mantissa,
-            deviation_exponent,
-            sync_word,
-        ) = struct.unpack(cls.COMMON_STRUCT_FORMAT, config_bytes[: CommonConfig.size()])
+            config.modulation,
+            baud_rate,
+            deviation,
+            config.sync_word
+        )
 
-        # Build common constructor arguments
-        args = {
-            "frequency": cls.config_to_frequency(frequency),
-            "modulation": modulation,
-            "baud_rate": cls.config_to_baud_rate(
-                baud_rate_mantissa, baud_rate_exponent
-            ),
-            "deviation": cls.config_to_deviation(
-                deviation_mantissa, deviation_exponent
-            ),
-            "sync_word": sync_word,
-        }
+    def to_struct(self) -> cc1101_common_config:
+        """Serialize a CommonConfig to a cc1101_common_config struct"""
 
-        # Add the unique constructor arguments
-        args.update(cls.set_unique(config_bytes[CommonConfig.size() :]))
-
-        # Call the constructor
-        return cls(**args)
-
-    def to_bytes(self) -> bytes:
-        """Convert the configuration to a struct that can be sent to the CC1101 driver"""
-
-        # Get common items that convert to multiple values
         baud_rate_mantissa, baud_rate_exponent = self.baud_rate_to_config(
             self._baud_rate
         )
@@ -468,8 +469,7 @@ class CommonConfig:
             self._deviation
         )
 
-        # Build an array of common values to pack
-        args = [
+        return cc1101_common_config(
             self.frequency_to_config(self._frequency),
             self._modulation,
             baud_rate_mantissa,
@@ -477,12 +477,24 @@ class CommonConfig:
             deviation_mantissa,
             deviation_exponent,
             self._sync_word,
-        ]
+        )
 
-        # Get the unique values to pack
-        args += self.get_unique()
+    @classmethod
+    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+        """Convert struct bytes from the CC1101 driver to a CommonConfig"""
 
-        return struct.pack(self.COMMON_STRUCT_FORMAT + self.STRUCT_FORMAT, *args)
+        print(config_bytes)
+
+        # Check for all zeroes in the config (not configured)
+        if sum(config_bytes) == 0:
+            return None
+
+        config = cc1101_common_config.from_buffer_copy(config_bytes)
+        return cls.from_struct(config)
+
+    def to_bytes(self) -> bytes:
+        """Convert configuration to struct bytes to send to the CC1101 driver"""
+        return bytes(self.to_struct())
 
     def __repr__(self) -> str:
         ret = f"Frequency: {self._frequency} MHz\n"
@@ -491,7 +503,6 @@ class CommonConfig:
         ret += f"Deviation: {self.deviation} kHz\n"
         ret += f"Sync Word: 0x{self.sync_word:08X}\n"
         return ret
-
 
 class RXConfig(CommonConfig):
     """Class for configuration properties required for RX
@@ -509,7 +520,7 @@ class RXConfig(CommonConfig):
     } cc1101_rx_config_t;
     """
 
-    STRUCT_FORMAT = "BBBBBBbI"
+    T = TypeVar("T", bound="RXConfig")
 
     packet_length: int
 
@@ -587,11 +598,56 @@ class RXConfig(CommonConfig):
         self.validate_bandwidth(bandwidth)
         self._bandwidth = bandwidth
 
-    def get_unique(self) -> Tuple[int, int, int, int, int, CarrierSenseMode, int, int]:
+    @classmethod
+    def size(cls) -> int:
+        return ctypes.sizeof(cc1101_rx_config)
+
+    @classmethod
+    def from_struct(cls: Type[T], config: cc1101_rx_config) -> T: # type: ignore[override]
+        """Construct a RXConfig from a cc1101_rx_config struct"""
+
+        common_config = CommonConfig.from_struct(config.common)
+
+        bandwidth = cls.config_to_bandwidth(config.bandwidth_mantissa, config.bandwidth_exponent)
+
+        return cls(
+            common_config.frequency,
+            common_config.modulation,
+            common_config.baud_rate,
+            common_config.sync_word,
+            config.packet_length,
+            bandwidth,
+            config.max_lna_gain,
+            config.max_dvga_gain,
+            config.magn_target,
+            config.carrier_sense_mode,
+            config.carrier_sense,
+            common_config.deviation
+        )
+
+    @classmethod
+    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+        """Convert struct bytes from the CC1101 driver to a RXConfig"""
+
+        # Check for all zeroes in the config (not configured)
+        if sum(config_bytes) == 0:
+            return None
+
+        config = cc1101_rx_config.from_buffer_copy(config_bytes)
+
+        return cls.from_struct(config)
+
+    def to_struct(self) -> cc1101_rx_config: # type: ignore[override]
+        """Serialize a RXConfig to a cc1101_rx_config struct"""
+
+        common_config = super().to_struct()
+
         bandwidth_mantissa, bandwidth_exponent = self.bandwidth_to_config(
             self.bandwidth
         )
-        return (
+
+        return cc1101_rx_config(
+            common_config,
             bandwidth_mantissa,
             bandwidth_exponent,
             self.max_lna_gain,
@@ -601,31 +657,6 @@ class RXConfig(CommonConfig):
             self.carrier_sense,
             self.packet_length,
         )
-
-    @classmethod
-    def set_unique(cls, config_bytes: bytes) -> Dict[str, Any]:
-        (
-            bandwidth_mantissa,
-            bandwidth_exponent,
-            max_lna_gain,
-            max_dvga_gain,
-            magn_target,
-            carrier_sense_mode,
-            carrier_sense,
-            packet_length,
-        ) = struct.unpack(cls.STRUCT_FORMAT, config_bytes)
-
-        bandwidth = cls.config_to_bandwidth(bandwidth_mantissa, bandwidth_exponent)
-
-        return {
-            "bandwidth": bandwidth,
-            "max_lna_gain": max_lna_gain,
-            "max_dvga_gain": max_dvga_gain,
-            "magn_target": magn_target,
-            "carrier_sense_mode": carrier_sense_mode,
-            "carrier_sense": carrier_sense,
-            "packet_length": packet_length,
-        }
 
     def __repr__(self) -> str:
         ret = super().__repr__()
@@ -659,7 +690,7 @@ class TXConfig(CommonConfig):
     } cc1101_tx_config_t;
     """
 
-    STRUCT_FORMAT = "Bxxx"
+    T = TypeVar("T", bound="TXConfig")
 
     _tx_power: int
     power_table = None
@@ -725,15 +756,47 @@ class TXConfig(CommonConfig):
             raise ValueError("invalid TX power")
         self._tx_power = tx_power
 
-    def get_unique(self) -> Tuple[int]:
-        return (self.tx_power,)
+    @classmethod
+    def size(cls: Type[T]) -> int:
+        """Get the size in bytes of the configuration struct"""
+        return ctypes.sizeof(cc1101_tx_config)
 
     @classmethod
-    def set_unique(cls, config_bytes: bytes) -> Dict[str, Any]:
-        (tx_power,) = struct.unpack(cls.STRUCT_FORMAT, config_bytes)
+    def from_struct(cls: Type[T], config: cc1101_tx_config) -> T: # type: ignore[override]
+        """Convert a cc1101_tx_config struct to a TXConfig"""
 
-        return {"tx_power": tx_power}
+        common_config = CommonConfig.from_struct(config.common)
 
+        return cls(
+            common_config.frequency,
+            common_config.modulation,
+            common_config.baud_rate,
+            config.tx_power,
+            common_config.deviation,
+            common_config.sync_word
+        )
+
+    @classmethod
+    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+        """Convert struct bytes from the CC1101 driver to a TXConfig"""
+
+        # Check for all zeroes in the config (not configured)
+        if sum(config_bytes) == 0:
+            return None
+
+        config = cc1101_tx_config.from_buffer_copy(config_bytes)
+        return cls.from_struct(config)
+
+    def to_struct(self) -> cc1101_tx_config: # type: ignore[override]
+        """Serialize a TXConfig to a cc1101_tx_config struct"""
+
+        common_config = super().to_struct()
+
+        return cc1101_tx_config(
+            common_config,
+            self._tx_power
+        )
+        
     def __repr__(self) -> str:
         ret = super().__repr__()
 
