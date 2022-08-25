@@ -107,6 +107,7 @@ def rx(args: argparse.Namespace) -> None:
         min_rssi = None
         max_rssi = None
 
+        print("Receiving Packets", file=sys.stderr)
         while True:
             if args.out_format == "rssi":
                 rssi = cc1101.get_rssi()
@@ -135,7 +136,7 @@ def rx(args: argparse.Namespace) -> None:
                         sys.stdout.buffer.write(packet)
 
                     count+=1
-            time.sleep(0.1)
+                time.sleep(0.1)
 
 
 def conf(args: argparse.Namespace) -> None:
