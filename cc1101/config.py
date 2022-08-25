@@ -170,7 +170,7 @@ class cc1101_rx_config(ctypes.Structure):
         ("max_dvga_gain", ctypes.c_ubyte), 
         ("magn_target", ctypes.c_ubyte), 
         ("carrier_sense_mode", ctypes.c_ubyte), 
-        ("carrier_sense", ctypes.c_char), 
+        ("carrier_sense", ctypes.c_byte), 
         ("packet_length", ctypes.c_uint), 
     ]
 
