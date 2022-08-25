@@ -17,7 +17,7 @@ setuptools.setup(
         "Topic :: Home Automation",
         "Operating System :: POSIX :: Linux",
         "Topic :: System :: Hardware :: Hardware Drivers",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "License :: OSI Approved :: MIT License"
     ],
     entry_points={
         "console_scripts": {
