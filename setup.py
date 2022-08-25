@@ -23,6 +23,5 @@ setuptools.setup(
         "console_scripts": {
             "cc1101 = cc1101.__main__:main"
         }
-    },
-    install_requires=["ioctl-opt"],
+    }
 )

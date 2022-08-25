@@ -4,10 +4,8 @@ Copyright (c) 2021
 
 from enum import IntEnum
 import fcntl
-from ioctl_opt import IOC, IOC_NONE, IOC_READ, IOC_WRITE
 
 DEVICE_CHARACTER = "c"
-
 
 class IOCTL(IntEnum):
     """IOCTL values corresponding with those defined in cc1101_chrdev.c in the driver"""
@@ -27,14 +25,31 @@ class IOCTL(IntEnum):
 
 def call(fh: int, cmd: IOCTL) -> None:
     """Helper for IOCTLs that call driver functions (no arguments)"""
-    fcntl.ioctl(fh, IOC(IOC_NONE, ord(DEVICE_CHARACTER), cmd, 0))
+
+    ioctl = 0
+    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= cmd
+
+    fcntl.ioctl(fh, ioctl)
 
 
 def write(fh: int, cmd: IOCTL, data: bytes) -> None:
     """Helper function for IOCTLs that write data to the driver"""
-    fcntl.ioctl(fh, IOC(IOC_WRITE, ord(DEVICE_CHARACTER), cmd, len(data)), data)
+    
+    ioctl = 0x40000000
+    ioctl |= (len(data) << 16)
+    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= cmd
+
+    fcntl.ioctl(fh, ioctl, data)
 
 
 def read(fh: int, cmd: IOCTL, data: bytes) -> None:
     """Helper function for IOCTLs that read data from the driver"""
-    fcntl.ioctl(fh, IOC(IOC_READ, ord(DEVICE_CHARACTER), cmd, len(data)), data)
+
+    ioctl = 0x80000000
+    ioctl |= (len(data) << 16)
+    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= cmd
+
+    fcntl.ioctl(fh, ioctl, data)
