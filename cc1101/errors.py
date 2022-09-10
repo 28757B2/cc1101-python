@@ -1,4 +1,3 @@
-
 from enum import Enum, auto
 
 
@@ -16,6 +15,7 @@ class DeviceError(Enum):
     PACKET_SIZE = auto()
     UNKNOWN = auto()
 
+
 class ConfigError(Enum):
     INVALID_FREQUENCY = auto()
     INVALID_BANDWIDTH = auto()
@@ -28,15 +28,16 @@ class ConfigError(Enum):
     INVALID_MAX_DVGA_GAIN = auto()
     INVALID_MAGN_TARGET = auto()
 
+
 class CC1101Exception(Exception):
     pass
 
-class DeviceExcetpion(CC1101Exception):
 
+class DeviceExcetpion(CC1101Exception):
     def __init__(self, error: DeviceError):
         self.error = error
 
-class ConfigException(CC1101Exception):
 
+class ConfigException(CC1101Exception):
     def __init__(self, error: ConfigError):
         self.error = error

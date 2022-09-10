@@ -13,6 +13,7 @@ from cc1101 import ioctl
 # CC1101 datasheet Table 31
 RSSI_OFFSET = 74
 
+
 class CC1101Handle:
     """Class to hold a file handle to a CC1101 device"""
 
@@ -26,7 +27,12 @@ class CC1101Handle:
     def __enter__(self) -> int:
         return self.fh
 
-    def __exit__(self, t: Optional[Type[BaseException]], value: Optional[BaseException], traceback: Optional[TracebackType]) -> bool:
+    def __exit__(
+        self,
+        t: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> bool:
         if not self.blocking:
             self.close()
 
@@ -34,6 +40,7 @@ class CC1101Handle:
 
     def close(self) -> None:
         os.close(self.fh)
+
 
 class CC1101:
     """Class to control a CC1101 radio using the Linux driver"""
@@ -44,7 +51,9 @@ class CC1101:
     rx_config: Optional[RXConfig] = None
     handle: Optional[CC1101Handle] = None
 
-    def __init__(self, dev: str, rx_config: Optional[RXConfig] = None, blocking: bool = False):
+    def __init__(
+        self, dev: str, rx_config: Optional[RXConfig] = None, blocking: bool = False
+    ):
         self.dev = dev
 
         if blocking:
@@ -104,14 +113,16 @@ class CC1101:
                 if rx_config.to_bytes() != device_config:
                     # Reconfigure the device
                     with self._get_handle() as fh:
-                        ioctl.write(fh, ioctl.IOCTL.SET_RX_CONF, self.rx_config.to_bytes())
+                        ioctl.write(
+                            fh, ioctl.IOCTL.SET_RX_CONF, self.rx_config.to_bytes()
+                        )
 
         # Otherwise, update the stored config and reconfigure the device
         else:
             self.rx_config = rx_config
             with self._get_handle() as fh:
                 ioctl.write(fh, ioctl.IOCTL.SET_RX_CONF, self.rx_config.to_bytes())
-        
+
     def transmit(self, tx_config: TXConfig, packet: bytes) -> None:
         """Transmit a sequence of bytes using a TX configuration"""
         with self._get_handle() as fh:
@@ -131,7 +142,6 @@ class CC1101:
                         packets.append(os.read(fh, self.rx_config.packet_length))
                 except OSError:
                     return packets
-
 
         raise IOError("RX config not set")
 

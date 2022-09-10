@@ -26,6 +26,7 @@ AVAILABLE_MAX_LNA_GAINS = [0, 3, 6, 7, 9, 12, 15, 17]
 AVAILABLE_MAX_DVGA_GAINS = [0, 6, 12, 18]
 AVAILABLE_MAGN_TARGETS = [24, 27, 30, 33, 36, 38, 40, 42]
 
+
 class Registers(IntEnum):
     """Mapping of register name to address
     Extracted from SmartRF studio using @RN@@<<@= 0x@AH@ config string
@@ -79,7 +80,9 @@ class Registers(IntEnum):
     TEST1 = 0x2D  # Various Test Settings
     TEST0 = 0x2E  # Various Test Settings
 
+
 CONFIG_SIZE = 0x2F
+
 
 class cc1101_common_config(ctypes.Structure):
     """C struct definition for cc1101_common_config from cc1101.h"""
@@ -89,10 +92,11 @@ class cc1101_common_config(ctypes.Structure):
         ("modulation", ctypes.c_ubyte),
         ("baud_rate_mantissa", ctypes.c_ubyte),
         ("baud_rate_exponent", ctypes.c_ubyte),
-        ("deviation_mantissa", ctypes.c_ubyte), 
-        ("deviation_exponent", ctypes.c_ubyte), 
-        ("sync_word", ctypes.c_ulong),               
+        ("deviation_mantissa", ctypes.c_ubyte),
+        ("deviation_exponent", ctypes.c_ubyte),
+        ("sync_word", ctypes.c_ulong),
     ]
+
 
 class cc1101_rx_config(ctypes.Structure):
     """C struct definition for cc1101_rx_config from cc1101.h"""
@@ -102,20 +106,22 @@ class cc1101_rx_config(ctypes.Structure):
         ("bandwidth_mantissa", ctypes.c_ubyte),
         ("bandwidth_exponent", ctypes.c_ubyte),
         ("max_lna_gain", ctypes.c_ubyte),
-        ("max_dvga_gain", ctypes.c_ubyte), 
-        ("magn_target", ctypes.c_ubyte), 
-        ("carrier_sense_mode", ctypes.c_ubyte), 
-        ("carrier_sense", ctypes.c_byte), 
-        ("packet_length", ctypes.c_uint), 
+        ("max_dvga_gain", ctypes.c_ubyte),
+        ("magn_target", ctypes.c_ubyte),
+        ("carrier_sense_mode", ctypes.c_ubyte),
+        ("carrier_sense", ctypes.c_byte),
+        ("packet_length", ctypes.c_uint),
     ]
+
 
 class cc1101_tx_config(ctypes.Structure):
     """C struct definition for cc1101_tx_config from cc1101.h"""
 
     _fields_ = [
         ("common", cc1101_common_config),
-        ("tx_power", ctypes.c_ubyte), 
+        ("tx_power", ctypes.c_ubyte),
     ]
+
 
 class Modulation(IntEnum):
     """CC1101 modulation modes"""
@@ -128,6 +134,7 @@ class Modulation(IntEnum):
 
     def __str__(self) -> str:
         return self.name
+
 
 class CarrierSenseMode(IntEnum):
     DISABLED = 0
@@ -172,7 +179,7 @@ class CommonConfig:
             or (frequency >= 778.999878 and frequency <= 928.000000)
         ):
             raise ConfigException(ConfigError.INVALID_FREQUENCY)
-        multiplier = (frequency * 2 ** 16) / XTAL_FREQ
+        multiplier = (frequency * 2**16) / XTAL_FREQ
         return int(multiplier)
 
     @staticmethod
@@ -181,7 +188,7 @@ class CommonConfig:
 
         Uses the formula from section 21 of the CC1101 datasheet
         """
-        return round((XTAL_FREQ / 2 ** 16) * config, 6)
+        return round((XTAL_FREQ / 2**16) * config, 6)
 
     def get_frequency(self) -> float:
         """Get the configured frequency"""
@@ -192,7 +199,9 @@ class CommonConfig:
         self._frequency = self.frequency_to_config(frequency)
 
     @staticmethod
-    def baud_rate_to_config(modulation: Modulation, baud_rate: float) -> Tuple[int, int]:
+    def baud_rate_to_config(
+        modulation: Modulation, baud_rate: float
+    ) -> Tuple[int, int]:
         """Convert a baud rate in kBaud to a configuration value
 
         Uses the formula from section 12 of the datasheet
@@ -212,17 +221,16 @@ class CommonConfig:
         elif modulation == Modulation.MSK:
             if baud_rate < 25.9857 or baud_rate > 499.878:
                 raise ConfigException(ConfigError.INVALID_BAUD_RATE)
-        
-        
+
         xtal_freq = XTAL_FREQ * 1000000
 
         r_data = baud_rate * 1000
 
-        exponent = math.floor(math.log((r_data * 2 ** 20) / xtal_freq, 2))
+        exponent = math.floor(math.log((r_data * 2**20) / xtal_freq, 2))
 
         mantissa = int(
             round(
-                ((r_data * 2 ** 28) / (xtal_freq * 2 ** exponent)) - 256,
+                ((r_data * 2**28) / (xtal_freq * 2**exponent)) - 256,
                 0,
             )
         )
@@ -234,7 +242,7 @@ class CommonConfig:
         """Convert a baud rate configuration value to kBaud"""
         xtal_freq = XTAL_FREQ * 1000000
 
-        r_data = (((256 + mantissa) * 2 ** exponent) / 2 ** 28) * xtal_freq
+        r_data = (((256 + mantissa) * 2**exponent) / 2**28) * xtal_freq
 
         baud_rate = float(round(r_data / 1000, 5))
 
@@ -242,11 +250,17 @@ class CommonConfig:
 
     def get_modulation_and_baud_rate(self) -> Tuple[Modulation, float]:
         """Get the configured baud rate"""
-        return self._modulation, self.config_to_baud_rate(self._baud_rate_mantissa, self._baud_rate_exponent)
+        return self._modulation, self.config_to_baud_rate(
+            self._baud_rate_mantissa, self._baud_rate_exponent
+        )
 
-    def set_modulation_and_baud_rate(self, modulation: Modulation, baud_rate: float) -> None:
+    def set_modulation_and_baud_rate(
+        self, modulation: Modulation, baud_rate: float
+    ) -> None:
         """Set the baud rate"""
-        self._baud_rate_mantissa, self._baud_rate_exponent = self.baud_rate_to_config(modulation, baud_rate)
+        self._baud_rate_mantissa, self._baud_rate_exponent = self.baud_rate_to_config(
+            modulation, baud_rate
+        )
         self._modulation = modulation
 
     @staticmethod
@@ -267,17 +281,21 @@ class CommonConfig:
         """
         xtal_freq = XTAL_FREQ * 1000000
 
-        f_dev = float((xtal_freq / 2 ** 17) * (8 + mantissa) * (2 ** exponent))
+        f_dev = float((xtal_freq / 2**17) * (8 + mantissa) * (2**exponent))
 
         return round(f_dev / 1000, 6)
 
     def get_deviation(self) -> float:
         """Get the configured deviation"""
-        return self.config_to_deviation(self._deviation_mantissa, self._deviation_exponent)
+        return self.config_to_deviation(
+            self._deviation_mantissa, self._deviation_exponent
+        )
 
     def set_deviation(self, deviation: float) -> None:
         """Set deviation"""
-        self._deviation_mantissa, self._deviation_exponent = self.deviation_to_config(deviation)
+        self._deviation_mantissa, self._deviation_exponent = self.deviation_to_config(
+            deviation
+        )
 
     def get_sync_word(self) -> int:
         """Get the configured sync word"""
@@ -285,7 +303,7 @@ class CommonConfig:
 
     def set_sync_word(self, sync_word: int) -> None:
         """Set the sync word
-        
+
         Any 16-bit sync word between 0x0000 and 0xFFFF is allowed
         For a 32-bit sync word, the high and low 16-bits must be the same
         """
@@ -304,7 +322,9 @@ class CommonConfig:
         return ctypes.sizeof(cc1101_common_config)
 
     @classmethod
-    def from_struct(cls: Type["CommonConfig"], config: cc1101_common_config) -> "CommonConfig":
+    def from_struct(
+        cls: Type["CommonConfig"], config: cc1101_common_config
+    ) -> "CommonConfig":
         """Construct a CommonConfig from a cc1101_common_config struct"""
 
         frequency = cls.config_to_frequency(config.frequency)
@@ -317,13 +337,7 @@ class CommonConfig:
             config.deviation_mantissa, config.deviation_exponent
         )
 
-        return cls(
-            frequency,
-            config.modulation,
-            baud_rate,
-            deviation,
-            config.sync_word
-        )
+        return cls(frequency, config.modulation, baud_rate, deviation, config.sync_word)
 
     def to_struct(self) -> cc1101_common_config:
         """Serialize a CommonConfig to a cc1101_common_config struct"""
@@ -339,7 +353,9 @@ class CommonConfig:
         )
 
     @classmethod
-    def from_bytes(cls: Type["CommonConfig"], config_bytes: bytes) -> Optional["CommonConfig"]:
+    def from_bytes(
+        cls: Type["CommonConfig"], config_bytes: bytes
+    ) -> Optional["CommonConfig"]:
         """Convert struct bytes from the CC1101 driver to a CommonConfig"""
 
         print(config_bytes)
@@ -366,7 +382,8 @@ class CommonConfig:
         ret += f"Sync Word: 0x{self.get_sync_word():08X}\n"
         return ret
 
-class RXConfig():
+
+class RXConfig:
     """Class for configuration properties required for RX"""
 
     _common_config: CommonConfig
@@ -414,8 +431,19 @@ class RXConfig():
         sync_word: int = DEFAULT_SYNC_WORD,
     ) -> "RXConfig":
         """Construct a RXConfig from all available parameters"""
-        common_config = CommonConfig(frequency, modulation, baud_rate, deviation, sync_word)
-        return cls(common_config, packet_length, bandwidth, carrier_sense_mode, carrier_sense, max_lna_gain, max_dvga_gain, magn_target)
+        common_config = CommonConfig(
+            frequency, modulation, baud_rate, deviation, sync_word
+        )
+        return cls(
+            common_config,
+            packet_length,
+            bandwidth,
+            carrier_sense_mode,
+            carrier_sense,
+            max_lna_gain,
+            max_dvga_gain,
+            magn_target,
+        )
 
     @staticmethod
     def bandwidth_to_config(bandwidth: int) -> Tuple[int, int]:
@@ -435,23 +463,29 @@ class RXConfig():
         """
         xtal_freq = XTAL_FREQ * 1000000
 
-        bw_channel = xtal_freq / (8 * (4 + mantissa) * 2 ** exponent)
+        bw_channel = xtal_freq / (8 * (4 + mantissa) * 2**exponent)
 
         return int(bw_channel / 1000)
 
     def get_bandwidth(self) -> int:
         """Get the configured bandwidth"""
-        return self.config_to_bandwidth(self._bandwidth_mantissa, self.bandwidth_exponent)
+        return self.config_to_bandwidth(
+            self._bandwidth_mantissa, self.bandwidth_exponent
+        )
 
     def set_bandwidth(self, bandwidth: int) -> None:
         """Set bandwidth"""
-        self._bandwidth_mantissa, self.bandwidth_exponent = self.bandwidth_to_config(bandwidth)
+        self._bandwidth_mantissa, self.bandwidth_exponent = self.bandwidth_to_config(
+            bandwidth
+        )
 
     def get_carrier_sense(self) -> Tuple[CarrierSenseMode, int]:
         """Get the configured carrier sense mode and value"""
         return self._carrier_sense_mode, self._carrier_sense
 
-    def set_carrier_sense(self, carrier_sense_mode: CarrierSenseMode, carrier_sense: int) -> None:
+    def set_carrier_sense(
+        self, carrier_sense_mode: CarrierSenseMode, carrier_sense: int
+    ) -> None:
 
         if carrier_sense_mode == CarrierSenseMode.RELATIVE:
             if carrier_sense in [6, 10, 14]:
@@ -470,7 +504,6 @@ class RXConfig():
             self._carrier_sense = 0
         else:
             raise ConfigException(ConfigError.INVALID_CARRIER_SENSE)
-
 
     def get_max_lna_gain(self) -> int:
         """Get the configured maximum LNA gain"""
@@ -516,7 +549,9 @@ class RXConfig():
     def from_struct(cls: Type["RXConfig"], config: cc1101_rx_config) -> "RXConfig":
         """Construct a RXConfig from a cc1101_rx_config struct"""
 
-        bandwidth = cls.config_to_bandwidth(config.bandwidth_mantissa, config.bandwidth_exponent)
+        bandwidth = cls.config_to_bandwidth(
+            config.bandwidth_mantissa, config.bandwidth_exponent
+        )
 
         return cls(
             CommonConfig.from_struct(config.common),
@@ -528,7 +563,6 @@ class RXConfig():
             config.carrier_sense_mode,
             config.carrier_sense,
         )
-
 
     @classmethod
     def from_bytes(cls: Type["RXConfig"], config_bytes: bytes) -> Optional["RXConfig"]:
@@ -583,10 +617,11 @@ class RXConfig():
     def __eq__(self, other: object) -> bool:
         if isinstance(other, RXConfig):
             return self.to_bytes() == other.to_bytes()
-        
+
         return False
 
-class TXConfig():
+
+class TXConfig:
     """Class for configuration properties required for TX"""
 
     _common_config: CommonConfig
@@ -611,7 +646,9 @@ class TXConfig():
         sync_word: int = DEFAULT_SYNC_WORD,
     ) -> "TXConfig":
         """Construct a TXConfig from a frequency within the ISM bands (315/433/868/915 MHz) and a power output in dBm"""
-        common_config = CommonConfig(frequency, modulation, baud_rate, deviation, sync_word)
+        common_config = CommonConfig(
+            frequency, modulation, baud_rate, deviation, sync_word
+        )
         tx_power = TXConfig.tx_power_to_config(frequency, tx_power)
         return cls(common_config, tx_power)
 
@@ -626,7 +663,9 @@ class TXConfig():
         sync_word: int = DEFAULT_SYNC_WORD,
     ) -> "TXConfig":
         """Construct a TXConfig with a raw PATABLE TX power value"""
-        common_config = CommonConfig(frequency, modulation, baud_rate, deviation, sync_word)
+        common_config = CommonConfig(
+            frequency, modulation, baud_rate, deviation, sync_word
+        )
         return cls(common_config, tx_power)
 
     @staticmethod
@@ -660,7 +699,9 @@ class TXConfig():
     @staticmethod
     def tx_power_to_config(frequency: float, tx_power: float) -> int:
 
-        reversed_power_table = {v:k for k,v in TXConfig.get_power_table(frequency).items()}
+        reversed_power_table = {
+            v: k for k, v in TXConfig.get_power_table(frequency).items()
+        }
 
         if tx_power in reversed_power_table:
             return reversed_power_table[tx_power]
@@ -679,17 +720,21 @@ class TXConfig():
 
     def get_tx_power(self) -> float:
         """Get the TX power in dBm
-        
+
         Configured frequency must be within 1MHz of 315/433/868/915Mhz
         """
-        return self.config_to_tx_power(self._common_config.get_frequency(), self._tx_power)
+        return self.config_to_tx_power(
+            self._common_config.get_frequency(), self._tx_power
+        )
 
     def set_tx_power(self, tx_power: float) -> None:
         """Set the TX power in dBm
-        
+
         Configured frequency must be within 1MHz of 315/433/868/915Mhz
         """
-        self._tx_power = self.tx_power_to_config(self._common_config.get_frequency(), tx_power)
+        self._tx_power = self.tx_power_to_config(
+            self._common_config.get_frequency(), tx_power
+        )
 
     @classmethod
     def size(cls: Type["TXConfig"]) -> int:
@@ -700,10 +745,7 @@ class TXConfig():
     def from_struct(cls: Type["TXConfig"], config: cc1101_tx_config) -> "TXConfig":
         """Convert a cc1101_tx_config struct to a TXConfig"""
 
-        return cls(
-            CommonConfig.from_struct(config.common),
-            config.tx_power
-        )
+        return cls(CommonConfig.from_struct(config.common), config.tx_power)
 
     @classmethod
     def from_bytes(cls: Type["TXConfig"], config_bytes: bytes) -> Optional["TXConfig"]:
@@ -719,15 +761,12 @@ class TXConfig():
     def to_struct(self) -> cc1101_tx_config:
         """Serialize a TXConfig to a cc1101_tx_config struct"""
 
-        return cc1101_tx_config(
-            self._common_config.to_struct(),
-            self._tx_power
-        )
+        return cc1101_tx_config(self._common_config.to_struct(), self._tx_power)
 
     def to_bytes(self) -> bytes:
         """Serialize a TXConfig to cc1101_tx_config struct bytes"""
         return bytes(self.to_struct())
-        
+
     def __repr__(self) -> str:
         ret = self._common_config.__repr__()
 
@@ -737,6 +776,7 @@ class TXConfig():
             ret += f"TX Power: 0x{self._tx_power:02X}\n"
 
         return ret
+
 
 def print_raw_config(config_bytes: bytes) -> None:
     """Print an array of CC1101 config bytes as register key/values"""

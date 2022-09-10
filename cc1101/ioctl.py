@@ -7,6 +7,7 @@ import fcntl
 
 DEVICE_CHARACTER = "c"
 
+
 class IOCTL(IntEnum):
     """IOCTL values corresponding with those defined in cc1101_chrdev.c in the driver"""
 
@@ -27,7 +28,7 @@ def call(fh: int, cmd: IOCTL) -> None:
     """Helper for IOCTLs that call driver functions (no arguments)"""
 
     ioctl = 0
-    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
     fcntl.ioctl(fh, ioctl)
@@ -35,10 +36,10 @@ def call(fh: int, cmd: IOCTL) -> None:
 
 def write(fh: int, cmd: IOCTL, data: bytes) -> None:
     """Helper function for IOCTLs that write data to the driver"""
-    
+
     ioctl = 0x40000000
-    ioctl |= (len(data) << 16)
-    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= len(data) << 16
+    ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
     fcntl.ioctl(fh, ioctl, data)
@@ -48,8 +49,8 @@ def read(fh: int, cmd: IOCTL, data: bytes) -> None:
     """Helper function for IOCTLs that read data from the driver"""
 
     ioctl = 0x80000000
-    ioctl |= (len(data) << 16)
-    ioctl |= (ord(DEVICE_CHARACTER) << 8)
+    ioctl |= len(data) << 16
+    ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
     fcntl.ioctl(fh, ioctl, data)
