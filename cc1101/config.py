@@ -6,7 +6,7 @@ import ctypes
 import math
 
 from enum import IntEnum
-from typing import Dict, Tuple, TypeVar, Type, Optional
+from typing import Dict, Tuple, Type, Optional
 
 from cc1101.errors import ConfigError, ConfigException
 
@@ -145,8 +145,6 @@ class CommonConfig:
     _deviation_mantissa: int
     _deviation_exponent: int
     _sync_word: int
-
-    T = TypeVar("T", bound="CommonConfig")
 
     def __init__(
         self,
@@ -301,12 +299,12 @@ class CommonConfig:
         self._sync_word = sync_word
 
     @classmethod
-    def size(cls: Type[T]) -> int:
+    def size(cls: Type["CommonConfig"]) -> int:
         """Get the size in bytes of the configuration struct"""
         return ctypes.sizeof(cc1101_common_config)
 
     @classmethod
-    def from_struct(cls: Type[T], config: cc1101_common_config) -> T:
+    def from_struct(cls: Type["CommonConfig"], config: cc1101_common_config) -> "CommonConfig":
         """Construct a CommonConfig from a cc1101_common_config struct"""
 
         frequency = cls.config_to_frequency(config.frequency)
@@ -341,7 +339,7 @@ class CommonConfig:
         )
 
     @classmethod
-    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+    def from_bytes(cls: Type["CommonConfig"], config_bytes: bytes) -> Optional["CommonConfig"]:
         """Convert struct bytes from the CC1101 driver to a CommonConfig"""
 
         print(config_bytes)
@@ -370,8 +368,6 @@ class CommonConfig:
 
 class RXConfig():
     """Class for configuration properties required for RX"""
-
-    T = TypeVar("T", bound="RXConfig")
 
     _common_config: CommonConfig
     _bandwidth_mantissa: int
@@ -517,7 +513,7 @@ class RXConfig():
         return ctypes.sizeof(cc1101_rx_config)
 
     @classmethod
-    def from_struct(cls: Type[T], config: cc1101_rx_config) -> T: # type: ignore[override]
+    def from_struct(cls: Type["RXConfig"], config: cc1101_rx_config) -> "RXConfig":
         """Construct a RXConfig from a cc1101_rx_config struct"""
 
         bandwidth = cls.config_to_bandwidth(config.bandwidth_mantissa, config.bandwidth_exponent)
@@ -535,7 +531,7 @@ class RXConfig():
 
 
     @classmethod
-    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+    def from_bytes(cls: Type["RXConfig"], config_bytes: bytes) -> Optional["RXConfig"]:
         """Convert struct bytes from the CC1101 driver to a RXConfig"""
 
         # Check for all zeroes in the config (not configured)
@@ -546,7 +542,7 @@ class RXConfig():
 
         return cls.from_struct(config)
 
-    def to_struct(self) -> cc1101_rx_config: # type: ignore[override]
+    def to_struct(self) -> cc1101_rx_config:
         """Serialize a RXConfig to a cc1101_rx_config struct"""
 
         return cc1101_rx_config(
@@ -592,8 +588,6 @@ class RXConfig():
 
 class TXConfig():
     """Class for configuration properties required for TX"""
-
-    T = TypeVar("T", bound="TXConfig")
 
     _common_config: CommonConfig
     _tx_power: int
@@ -698,12 +692,12 @@ class TXConfig():
         self._tx_power = self.tx_power_to_config(self._common_config.get_frequency(), tx_power)
 
     @classmethod
-    def size(cls: Type[T]) -> int:
+    def size(cls: Type["TXConfig"]) -> int:
         """Get the size in bytes of the configuration struct"""
         return ctypes.sizeof(cc1101_tx_config)
 
     @classmethod
-    def from_struct(cls: Type[T], config: cc1101_tx_config) -> T: # type: ignore[override]
+    def from_struct(cls: Type["TXConfig"], config: cc1101_tx_config) -> "TXConfig":
         """Convert a cc1101_tx_config struct to a TXConfig"""
 
         return cls(
@@ -712,7 +706,7 @@ class TXConfig():
         )
 
     @classmethod
-    def from_bytes(cls: Type[T], config_bytes: bytes) -> Optional[T]:
+    def from_bytes(cls: Type["TXConfig"], config_bytes: bytes) -> Optional["TXConfig"]:
         """Convert struct bytes from the CC1101 driver to a TXConfig"""
 
         # Check for all zeroes in the config (not configured)
@@ -722,7 +716,7 @@ class TXConfig():
         config = cc1101_tx_config.from_buffer_copy(config_bytes)
         return cls.from_struct(config)
 
-    def to_struct(self) -> cc1101_tx_config: # type: ignore[override]
+    def to_struct(self) -> cc1101_tx_config:
         """Serialize a TXConfig to a cc1101_tx_config struct"""
 
         return cc1101_tx_config(
