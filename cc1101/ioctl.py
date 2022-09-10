@@ -1,9 +1,12 @@
 """
 Copyright (c) 2021
 """
+import errno
+import fcntl
 
 from enum import IntEnum
-import fcntl
+
+from cc1101.errors import DeviceError, DeviceException
 
 DEVICE_CHARACTER = "c"
 
@@ -24,6 +27,23 @@ class IOCTL(IntEnum):
     GET_MAX_PACKET_SIZE = 10
 
 
+def handle_status(status: int) -> None:
+    """Convert IOCTL errno to an exception if required"""
+
+    if status == 0:
+        return
+    elif status == errno.EIO:
+        raise DeviceException(DeviceError.INVALID_IOCTL)
+    elif status == errno.EFAULT:
+        raise DeviceException(DeviceError.COPY)
+    elif status == errno.EINVAL:
+        raise DeviceException(DeviceError.INVALID_CONFIG)
+    elif status == errno.ENOMEM:
+        raise DeviceException(DeviceError.OUT_OF_MEMORY)
+    else:
+        raise DeviceException(DeviceError.UNKNOWN)
+
+
 def call(fh: int, cmd: IOCTL) -> None:
     """Helper for IOCTLs that call driver functions (no arguments)"""
 
@@ -31,10 +51,15 @@ def call(fh: int, cmd: IOCTL) -> None:
     ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
-    fcntl.ioctl(fh, ioctl)
+    try:
+        status = fcntl.ioctl(fh, ioctl)
+    except OSError as e:
+        status = e.errno
+
+    handle_status(status)
 
 
-def write(fh: int, cmd: IOCTL, data: bytes) -> None:
+def write(fh: int, cmd: IOCTL, data: bytearray) -> None:
     """Helper function for IOCTLs that write data to the driver"""
 
     ioctl = 0x40000000
@@ -42,10 +67,15 @@ def write(fh: int, cmd: IOCTL, data: bytes) -> None:
     ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
-    fcntl.ioctl(fh, ioctl, data)
+    try:
+        status = fcntl.ioctl(fh, ioctl, data, True)
+    except OSError as e:
+        status = e.errno
+
+    handle_status(status)
 
 
-def read(fh: int, cmd: IOCTL, data: bytes) -> None:
+def read(fh: int, cmd: IOCTL, data: bytearray) -> None:
     """Helper function for IOCTLs that read data from the driver"""
 
     ioctl = 0x80000000
@@ -53,4 +83,9 @@ def read(fh: int, cmd: IOCTL, data: bytes) -> None:
     ioctl |= ord(DEVICE_CHARACTER) << 8
     ioctl |= cmd
 
-    fcntl.ioctl(fh, ioctl, data)
+    try:
+        status = fcntl.ioctl(fh, ioctl, data, True)
+    except OSError as e:
+        status = e.errno
+
+    handle_status(status)

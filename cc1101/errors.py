@@ -33,7 +33,7 @@ class CC1101Exception(Exception):
     pass
 
 
-class DeviceExcetpion(CC1101Exception):
+class DeviceException(CC1101Exception):
     def __init__(self, error: DeviceError):
         self.error = error
 

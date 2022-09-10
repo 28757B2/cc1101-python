@@ -135,6 +135,13 @@ class Modulation(IntEnum):
     def __str__(self) -> str:
         return self.name
 
+    @classmethod
+    def from_string(cls: Type["Modulation"], s: str) -> "Modulation":
+        try:
+            return cls[s]
+        except:
+            raise ValueError()
+
 
 class CarrierSenseMode(IntEnum):
     DISABLED = 0
@@ -343,7 +350,7 @@ class CommonConfig:
         """Serialize a CommonConfig to a cc1101_common_config struct"""
 
         return cc1101_common_config(
-            self.frequency_to_config(self._frequency),
+            self._frequency,
             self._modulation,
             self._baud_rate_mantissa,
             self._baud_rate_exponent,
@@ -367,9 +374,9 @@ class CommonConfig:
         config = cc1101_common_config.from_buffer_copy(config_bytes)
         return cls.from_struct(config)
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self) -> bytearray:
         """Convert configuration to struct bytes to send to the CC1101 driver"""
-        return bytes(self.to_struct())
+        return bytearray(self.to_struct())
 
     def __repr__(self) -> str:
 
@@ -470,12 +477,12 @@ class RXConfig:
     def get_bandwidth(self) -> int:
         """Get the configured bandwidth"""
         return self.config_to_bandwidth(
-            self._bandwidth_mantissa, self.bandwidth_exponent
+            self._bandwidth_mantissa, self._bandwidth_exponent
         )
 
     def set_bandwidth(self, bandwidth: int) -> None:
         """Set bandwidth"""
-        self._bandwidth_mantissa, self.bandwidth_exponent = self.bandwidth_to_config(
+        self._bandwidth_mantissa, self._bandwidth_exponent = self.bandwidth_to_config(
             bandwidth
         )
 
@@ -591,9 +598,9 @@ class RXConfig:
             self.packet_length,
         )
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self) -> bytearray:
         """Serialize a RXConfig to a cc1101_rx_config struct bytes"""
-        return bytes(self.to_struct())
+        return bytearray(self.to_struct())
 
     def __repr__(self) -> str:
         ret = self._common_config.__repr__()
@@ -763,9 +770,9 @@ class TXConfig:
 
         return cc1101_tx_config(self._common_config.to_struct(), self._tx_power)
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self) -> bytearray:
         """Serialize a TXConfig to cc1101_tx_config struct bytes"""
-        return bytes(self.to_struct())
+        return bytearray(self.to_struct())
 
     def __repr__(self) -> str:
         ret = self._common_config.__repr__()

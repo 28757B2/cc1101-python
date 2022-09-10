@@ -4,11 +4,13 @@ Copyright (c) 2021
 
 import os
 import struct
+import errno
 
 from typing import List, Optional, Type
 from types import TracebackType
 from cc1101.config import RXConfig, TXConfig, CONFIG_SIZE
 from cc1101 import ioctl
+from cc1101.errors import DeviceError, DeviceException
 
 # CC1101 datasheet Table 31
 RSSI_OFFSET = 74
@@ -32,11 +34,9 @@ class CC1101Handle:
         t: Optional[Type[BaseException]],
         value: Optional[BaseException],
         traceback: Optional[TracebackType],
-    ) -> bool:
+    ) -> None:
         if not self.blocking:
             self.close()
-
-        return True
 
     def close(self) -> None:
         os.close(self.fh)
@@ -137,11 +137,16 @@ class CC1101:
             packets = []
 
             with self._get_handle() as fh:
-                try:
-                    while True:
+                while True:
+                    try:
                         packets.append(os.read(fh, self.rx_config.packet_length))
-                except OSError:
-                    return packets
+                    except OSError as e:
+                        if e.errno == errno.ENOMSG:
+                            return packets
+                        elif e.errno == errno.EMSGSIZE:
+                            raise DeviceException(DeviceError.PACKET_SIZE)
+                        elif e.errno == errno.EFAULT:
+                            raise DeviceException(DeviceError.COPY)
 
         raise IOError("RX config not set")
 
@@ -167,10 +172,10 @@ class CC1101:
 
         return int(max_packet_size)
 
-    def _ioctl(self, command: ioctl.IOCTL, out: bytes) -> None:
+    def _ioctl(self, command: ioctl.IOCTL, out: bytearray) -> None:
         """Helper to read a device config"""
         with self._get_handle() as fh:
-            ioctl.read(fh, command, out)
+            return ioctl.read(fh, command, out)
 
     def get_device_config(self) -> bytes:
         """Get the current device configuration registers as a sequence of bytes"""

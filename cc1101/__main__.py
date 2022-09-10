@@ -180,6 +180,7 @@ def main() -> None:
     tx_parser.add_argument("device", help="CC1101 Device")
     tx_parser.add_argument(
         "modulation",
+        type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
     tx_parser.add_argument("frequency", help="frequency (MHz)")
@@ -216,6 +217,7 @@ def main() -> None:
     rx_parser.add_argument("device", help="CC1101 Device")
     rx_parser.add_argument(
         "modulation",
+        type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
     rx_parser.add_argument("frequency", help="frequency (MHz")

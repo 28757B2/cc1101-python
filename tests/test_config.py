@@ -7,6 +7,8 @@ VALID_FREQUENCY = 433.92
 VALID_MODULATION = Modulation.OOK
 VALID_BAUD_RATE = 1
 VALID_DEVIATION = 1.586914
+VALID_TX_POWER = 9.9
+VALID_PACKET_LENGTH = 1024
 VALID_SYNC_WORD = 0x00000000
 
 def test_freq() -> None:
@@ -139,7 +141,10 @@ def test_tx_power() -> None:
     assert e_info.value.error == ConfigError.INVALID_TX_POWER
 
     with pytest.raises(ConfigException) as e_info:
-        TXConfig.config_to_tx_power(433.0, -1.0)
+        TXConfig.config_to_tx_power(433.0, -1)
     assert e_info.value.error == ConfigError.INVALID_TX_POWER
 
 
+def test_to_struct() -> None:
+    RXConfig.new(VALID_FREQUENCY, VALID_MODULATION, VALID_BAUD_RATE, VALID_PACKET_LENGTH).to_struct()
+    TXConfig.new(VALID_FREQUENCY, VALID_MODULATION, VALID_BAUD_RATE, VALID_TX_POWER).to_struct()
