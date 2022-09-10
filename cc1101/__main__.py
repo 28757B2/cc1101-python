@@ -13,14 +13,14 @@ from . import config, CC1101
 def tx(args: argparse.Namespace) -> None:
     """Handle the tx subcommand"""
 
-    modulation = int(args.modulation)
+    modulation = config.Modulation(args.modulation)
     frequency = float(args.frequency)
     baud_rate = float(args.baud_rate)
     sync_word = int(args.sync_word, 16)
 
     try:
         if args.raw:
-            tx_config = config.TXConfig(
+            tx_config = config.TXConfig.new_raw(
                 frequency,
                 modulation,
                 baud_rate,
@@ -29,7 +29,7 @@ def tx(args: argparse.Namespace) -> None:
                 sync_word,
             )
         else:
-            tx_config = config.TXConfig.from_ism(
+            tx_config = config.TXConfig.new(
                 frequency,
                 modulation,
                 baud_rate,
@@ -56,7 +56,7 @@ def tx(args: argparse.Namespace) -> None:
 def rx(args: argparse.Namespace) -> None:
     """Handle the rx subcommand"""
 
-    modulation = int(args.modulation)
+    modulation = config.Modulation(args.modulation)
     frequency = float(args.frequency)
     baud_rate = float(args.baud_rate)
     sync_word = int(args.sync_word, 16)
@@ -79,11 +79,10 @@ def rx(args: argparse.Namespace) -> None:
         carrier_sense = int(args.carrier_sense)
 
     try:
-        rx_config = config.RXConfig(
+        rx_config = config.RXConfig.new(
             frequency,
             modulation,
             baud_rate,
-            sync_word,
             packet_size,
             bandwidth = args.bandwidth,
             magn_target = args.magn_target,
@@ -92,6 +91,7 @@ def rx(args: argparse.Namespace) -> None:
             carrier_sense_mode = carrier_sense_mode,
             carrier_sense = carrier_sense,
             deviation = args.deviation,
+            sync_word = sync_word
         )
     except ValueError as e:
         print(f"Error: {e}")
@@ -176,7 +176,6 @@ def main() -> None:
     tx_parser.add_argument("device", help="CC1101 Device")
     tx_parser.add_argument(
         "modulation",
-        type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
     tx_parser.add_argument("frequency", help="frequency (MHz)")
@@ -213,7 +212,6 @@ def main() -> None:
     rx_parser.add_argument("device", help="CC1101 Device")
     rx_parser.add_argument(
         "modulation",
-        type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
     rx_parser.add_argument("frequency", help="frequency (MHz")
@@ -229,7 +227,7 @@ def main() -> None:
     rx_parser.add_argument(
         "--bandwidth",
         type=int,
-        choices=config.RXConfig.supported_bandwidths(),
+        choices= sorted([int(config.RXConfig.config_to_bandwidth(m, e)) for m in reversed(range(0, 4)) for e in reversed(range(0, 4))]),
         default=203,
         help="recieve bandwidth (kHz)",
     )
