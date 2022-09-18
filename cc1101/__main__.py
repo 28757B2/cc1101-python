@@ -178,12 +178,12 @@ def main() -> None:
 
     tx_parser = subparsers.add_parser("tx", help="Transmit a Packet")
     tx_parser.add_argument("device", help="CC1101 Device")
+    tx_parser.add_argument("frequency", help="frequency (MHz)")
     tx_parser.add_argument(
         "modulation",
         type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
-    tx_parser.add_argument("frequency", help="frequency (MHz)")
     tx_parser.add_argument("baud_rate", help="baud rate (kBaud)")
     tx_parser.add_argument("tx_power", help="transmit power (hex or dBm)")
     tx_parser.add_argument("packet", help="packet to transmit (hexadecimal string)")
@@ -215,15 +215,15 @@ def main() -> None:
 
     rx_parser = subparsers.add_parser("rx", help="Receive Packets")
     rx_parser.add_argument("device", help="CC1101 Device")
+    rx_parser.add_argument("frequency", help="frequency (MHz")
     rx_parser.add_argument(
         "modulation",
         type=config.Modulation.from_string,
         choices=list(config.Modulation),
     )
-    rx_parser.add_argument("frequency", help="frequency (MHz")
     rx_parser.add_argument("baud_rate", help="baud rate (kBaud)")
-    rx_parser.add_argument("sync_word", help="sync word (2 or 4 bytes hexadecimal)")
     rx_parser.add_argument("packet_size", help="receive packet size (bytes)")
+    rx_parser.add_argument("--sync_word", help="sync word (2 or 4 bytes hexadecimal)", default="0")
     rx_parser.add_argument(
         "--deviation",
         type=float,

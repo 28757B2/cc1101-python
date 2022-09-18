@@ -31,11 +31,11 @@ Transmits or receives packets.
 #### `device`
 The path to a `/dev/cc1101.x.x` interface provided by the driver.
 
-#### `modulation`
-The modulation scheme to use. Valid values are OOK, FSK_2, FSK_4, GFSK, MSK.
-
 #### `frequency`
 The frequency to receive/transmit on. Valid values are 300-348, 387-464 and 779-928 MHz.
+
+#### `modulation`
+The modulation scheme to use. Valid values are OOK, FSK_2, FSK_4, GFSK, MSK.
 
 #### `baud_rate`
 The data rate in kBaud to receive/transmit packets. Valid values are within the range 0.6-500 and depend on modulation:
@@ -47,7 +47,7 @@ The data rate in kBaud to receive/transmit packets. Valid values are within the 
 | 4FSK       | 0.6 - 300 |
 | MSK        | 26 - 500  |
 
-#### `sync_word`
+#### `--sync_word`
 The Sync Word to use, specified as a two or four byte hexadecimal value (e.g `0f0f`). If four bytes are used, the upper and lower two bytes must be the same (e.g `0f0f0f0f`) 
 
 In RX, the device searches for the specified sync word to begin reception. Set `0x00` to disable the sync word.
@@ -124,10 +124,10 @@ A sequence of bytes in hexadecimal form to transmit using the CC1101.
 In `--raw` mode, `tx_power` is provided as a single byte in hexadecimal, which will be directly set in the CC1101's `PATABLE`. Any valid frequency value can be used.
 
 ## RX Example
-    python3 -m cc1101 rx /dev/cc1101.0.0 OOK 433 1 0f0f 64
+    python3 -m cc1101 rx /dev/cc1101.0.0 433 OOK 1 64
 
 ## TX Example
-    python3 -m cc1101 tx /dev/cc1101.0.0 OOK 433 1 1.4 0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f
+    python3 -m cc1101 tx /dev/cc1101.0.0 433 OOK 1 1.4 0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f
 
 # Python Library
 These examples show how to integrate the CC1101 into Python programs.
