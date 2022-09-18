@@ -88,13 +88,13 @@ class cc1101_common_config(ctypes.Structure):
     """C struct definition for cc1101_common_config from cc1101.h"""
 
     _fields_ = [
-        ("frequency", ctypes.c_uint),
-        ("modulation", ctypes.c_ubyte),
-        ("baud_rate_mantissa", ctypes.c_ubyte),
-        ("baud_rate_exponent", ctypes.c_ubyte),
-        ("deviation_mantissa", ctypes.c_ubyte),
-        ("deviation_exponent", ctypes.c_ubyte),
-        ("sync_word", ctypes.c_ulong),
+        ("frequency", ctypes.c_uint32),
+        ("modulation", ctypes.c_uint8),
+        ("baud_rate_mantissa", ctypes.c_uint8),
+        ("baud_rate_exponent", ctypes.c_uint8),
+        ("deviation_mantissa", ctypes.c_uint8),
+        ("deviation_exponent", ctypes.c_uint8),
+        ("sync_word", ctypes.c_uint32),
     ]
 
 
@@ -103,14 +103,14 @@ class cc1101_rx_config(ctypes.Structure):
 
     _fields_ = [
         ("common", cc1101_common_config),
-        ("bandwidth_mantissa", ctypes.c_ubyte),
-        ("bandwidth_exponent", ctypes.c_ubyte),
-        ("max_lna_gain", ctypes.c_ubyte),
-        ("max_dvga_gain", ctypes.c_ubyte),
-        ("magn_target", ctypes.c_ubyte),
-        ("carrier_sense_mode", ctypes.c_ubyte),
-        ("carrier_sense", ctypes.c_byte),
-        ("packet_length", ctypes.c_uint),
+        ("bandwidth_mantissa", ctypes.c_uint8),
+        ("bandwidth_exponent", ctypes.c_uint8),
+        ("max_lna_gain", ctypes.c_uint8),
+        ("max_dvga_gain", ctypes.c_uint8),
+        ("magn_target", ctypes.c_uint8),
+        ("carrier_sense_mode", ctypes.c_uint8),
+        ("carrier_sense", ctypes.c_uint8),
+        ("packet_length", ctypes.c_uint32),
     ]
 
 
