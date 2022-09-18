@@ -45,7 +45,7 @@ class CC1101Handle:
 class CC1101:
     """Class to control a CC1101 radio using the Linux driver"""
 
-    VERSION = 3
+    VERSION = 4
 
     dev: str
     rx_config: Optional[RXConfig] = None
