@@ -37,8 +37,7 @@ from cc1101.config import RXConfig, Modulation
 from typing import List
 
 DEVICE = "/dev/cc1101.0.0"
-FREQUENCY = 434.0
-SYNC_WORD = 0x00 # No sync word - use default carrier sense threshold to trigger RX
+FREQUENCY = 433.92
 PACKET_LENGTH = 1024
 
 """
@@ -83,7 +82,7 @@ def decode_rx_bytes(rx_bytes: bytes) -> List[str]:
     return packets
 
 # Create the RX config and device
-rx_config = RXConfig(FREQUENCY, Modulation.OOK, BAUD_RATE, SYNC_WORD, PACKET_LENGTH)
+rx_config = RXConfig.new(FREQUENCY, Modulation.OOK, BAUD_RATE, PACKET_LENGTH)
 radio = CC1101(DEVICE, rx_config)
 
 # RX Loop

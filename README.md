@@ -140,7 +140,7 @@ from binascii import hexlify
 from cc1101.config import RXConfig, Modulation
 from cc1101 import CC1101
 
-rx_config = RXConfig(frequency=434, modulation=Modulation.OOK, baud_rate=1, sync_word=0x0000, packet_length=64)
+rx_config = RXConfig.new(frequency=434, modulation=Modulation.OOK, baud_rate=1, sync_word=0x0000, packet_length=64)
 radio = CC1101("/dev/cc1101.0.0", rx_config, blocking=True)
 
 while True:
@@ -160,7 +160,7 @@ from binascii import unhexlify
 from cc1101.config import TXConfig, Modulation
 from cc1101 import CC1101
 
-tx_config = TXConfig.from_ism(frequency=434, modulation=Modulation.OOK, baud_rate=1, tx_power=0.1)
+tx_config = TXConfig.new(frequency=434, modulation=Modulation.OOK, baud_rate=1, tx_power=0.1)
 radio = CC1101("/dev/cc1101.0.0")
 
 radio.transmit(tx_config, unhexlify("0f0f0f0f0f0f0f0f0f0f0f"))

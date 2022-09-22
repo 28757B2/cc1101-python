@@ -20,7 +20,7 @@ DEFAULT_SYNC_WORD = 0x0000
 DEFAULT_MAX_LNA_GAIN = 0
 DEFAULT_MAX_DVGA_GAIN = 0
 DEFAULT_MAGN_TARGET = 33
-DEFAULT_CARRIER_SENSE = 10
+DEFAULT_CARRIER_SENSE = 6
 
 AVAILABLE_MAX_LNA_GAINS = [0, 3, 6, 7, 9, 12, 15, 17]
 AVAILABLE_MAX_DVGA_GAINS = [0, 6, 12, 18]
@@ -403,15 +403,15 @@ class RXConfig:
     packet_length: int
 
     def __init__(
-        self,
-        common_config: CommonConfig,
-        packet_length: int,
-        bandwidth: int = DEFAULT_BANDWIDTH,
-        carrier_sense_mode: CarrierSenseMode = CarrierSenseMode.RELATIVE,
-        carrier_sense: int = DEFAULT_CARRIER_SENSE,
-        max_lna_gain: int = DEFAULT_MAX_LNA_GAIN,
-        max_dvga_gain: int = DEFAULT_MAX_DVGA_GAIN,
-        magn_target: int = DEFAULT_MAGN_TARGET,
+            self,
+            common_config: CommonConfig,
+            packet_length: int,
+            bandwidth: int = DEFAULT_BANDWIDTH,
+            carrier_sense_mode: CarrierSenseMode = CarrierSenseMode.RELATIVE,
+            carrier_sense: int = DEFAULT_CARRIER_SENSE,
+            max_lna_gain: int = DEFAULT_MAX_LNA_GAIN,
+            max_dvga_gain: int = DEFAULT_MAX_DVGA_GAIN,
+            magn_target: int = DEFAULT_MAGN_TARGET,
     ):
         self._common_config = common_config
         self.set_bandwidth(bandwidth)
@@ -423,19 +423,19 @@ class RXConfig:
 
     @classmethod
     def new(
-        cls: Type["RXConfig"],
-        frequency: float,
-        modulation: Modulation,
-        baud_rate: float,
-        packet_length: int,
-        bandwidth: int = DEFAULT_BANDWIDTH,
-        carrier_sense_mode: CarrierSenseMode = CarrierSenseMode.RELATIVE,
-        carrier_sense: int = DEFAULT_CARRIER_SENSE,
-        max_lna_gain: int = DEFAULT_MAX_LNA_GAIN,
-        max_dvga_gain: int = DEFAULT_MAX_DVGA_GAIN,
-        magn_target: int = DEFAULT_MAGN_TARGET,
-        deviation: float = DEFAULT_DEVIATION,
-        sync_word: int = DEFAULT_SYNC_WORD,
+            cls: Type["RXConfig"],
+            frequency: float,
+            modulation: Modulation,
+            baud_rate: float,
+            packet_length: int,
+            bandwidth: int = DEFAULT_BANDWIDTH,
+            carrier_sense_mode: CarrierSenseMode = CarrierSenseMode.RELATIVE,
+            carrier_sense: int = DEFAULT_CARRIER_SENSE,
+            max_lna_gain: int = DEFAULT_MAX_LNA_GAIN,
+            max_dvga_gain: int = DEFAULT_MAX_DVGA_GAIN,
+            magn_target: int = DEFAULT_MAGN_TARGET,
+            deviation: float = DEFAULT_DEVIATION,
+            sync_word: int = DEFAULT_SYNC_WORD,
     ) -> "RXConfig":
         """Construct a RXConfig from all available parameters"""
         common_config = CommonConfig(
