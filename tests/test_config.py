@@ -81,7 +81,7 @@ def test_baud_rate() -> None:
 
 def test_deviation() -> None:
     CommonConfig.deviation_to_config(1.586914) == (0x00, 0x00)
-    #CommonConfig.deviation_to_config(380.85938) == (0x07, 0x07)
+    CommonConfig.deviation_to_config(380.859375) == (0x07, 0x07)
 
     CommonConfig.config_to_deviation(0x00, 0x00) == 1.586914
     CommonConfig.config_to_deviation(0x07, 0x07) == 380.859375
@@ -129,7 +129,6 @@ def test_tx_power() -> None:
         for hex, dbm in power_table.items():
             assert TXConfig.config_to_tx_power(frequency, hex) == dbm
             assert TXConfig.tx_power_to_config(frequency, dbm) == hex
-
 
 
     with pytest.raises(ConfigException) as e_info:

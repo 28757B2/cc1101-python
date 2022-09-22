@@ -1,5 +1,5 @@
 """
-Copyright (c) 2021
+Copyright (c) 2022
 """
 
 import argparse
@@ -223,7 +223,9 @@ def main() -> None:
     )
     rx_parser.add_argument("baud_rate", help="baud rate (kBaud)")
     rx_parser.add_argument("packet_size", help="receive packet size (bytes)")
-    rx_parser.add_argument("--sync_word", help="sync word (2 or 4 bytes hexadecimal)", default="0")
+    rx_parser.add_argument(
+        "--sync_word", help="sync word (2 or 4 bytes hexadecimal)", default="0"
+    )
     rx_parser.add_argument(
         "--deviation",
         type=float,

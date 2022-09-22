@@ -1,5 +1,5 @@
 """
-Copyright (c) 2021
+Copyright (c) 2022
 
 Example showing decoding of data packets from a Nexus protocol weather station using the CC1101
 
