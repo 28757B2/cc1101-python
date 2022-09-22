@@ -382,8 +382,8 @@ class CommonConfig:
 
         modulation, baud_rate = self.get_modulation_and_baud_rate()
 
-        ret = f"Frequency: {self._frequency} MHz\n"
-        ret += f"Modulation: {modulation.name}\n"
+        ret = f"Frequency: {self.get_frequency()} MHz\n"
+        ret += f"Modulation: {Modulation(modulation).name}\n"
         ret += f"Baud Rate: {baud_rate} kBaud\n"
         ret += f"Deviation: {self.get_deviation()} kHz\n"
         ret += f"Sync Word: 0x{self.get_sync_word():08X}\n"
@@ -524,7 +524,6 @@ class RXConfig:
 
     def set_max_lna_gain(self, max_lna_gain: int) -> None:
         """Set maximum LNA gain"""
-
         if max_lna_gain in AVAILABLE_MAX_LNA_GAINS:
             self._max_lna_gain = max_lna_gain
         else:
@@ -570,11 +569,11 @@ class RXConfig:
             CommonConfig.from_struct(config.common),
             config.packet_length,
             bandwidth,
+            config.carrier_sense_mode,
+            config.carrier_sense,
             config.max_lna_gain,
             config.max_dvga_gain,
             config.magn_target,
-            config.carrier_sense_mode,
-            config.carrier_sense,
         )
 
     @classmethod
@@ -623,7 +622,7 @@ class RXConfig:
         elif carrier_sense_mode == CarrierSenseMode.RELATIVE:
             ret += f"Carrier Sense: +{carrier_sense} dB\n"
         else:
-            ret += "Carrier Sense: Disabled"
+            ret += "Carrier Sense: Disabled\n"
 
         return ret
 
