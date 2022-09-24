@@ -119,7 +119,7 @@ class cc1101_tx_config(ctypes.Structure):
 
     _fields_ = [
         ("common", cc1101_common_config),
-        ("tx_power", ctypes.c_ubyte),
+        ("tx_power", ctypes.c_uint8),
     ]
 
 
